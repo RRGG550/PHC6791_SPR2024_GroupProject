@@ -18,7 +18,7 @@ library(readxlsb)
 Data in XLSB is separated by year in each sheet. Using 'readxlsb' I read in each year as a separate file.
 
 ```{r}
-?read_xlsb
+#?read_xlsb
 data_2023 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 1)
 data_2022 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 2)
 data_2021 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 3)
@@ -32,7 +32,7 @@ data_2014 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 10)
 data_2013 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 11)
 ```
 
-Read only Gainesville/Alachua, Putnam County Data
+### Read only Gainesville/Alachua, Putnam County Data
 
 ```{r}
 data_2023 <- data_2023 %>% 
@@ -59,7 +59,7 @@ data_2013 <- data_2013 %>%
   filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
 ```
 
-Add year column
+### Add year column
 
 ```{r}
 data_2023$Year <- 2023
@@ -75,10 +75,10 @@ data_2014$Year <- 2014
 data_2013$Year <- 2013
 ```
 
-Merge Data sets
+### Merge Data sets
 
 ```{r}
-?merge
+#?merge
 data <- merge(data_2023, data_2022, all = TRUE)
 data <- merge(data, data_2021, all = TRUE)
 data <- merge(data, data_2020, all = TRUE)
@@ -91,41 +91,84 @@ data <- merge(data, data_2014, all = TRUE)
 data <- merge(data, data_2013, all = TRUE)
 ```
 
-Graph some stuff
+### Graph some stuff
 
 ```{r}
 #Overall Homeless Count
-ggplot(data = data, mapping = aes(x = Year, y = Overall.Homeless)) + 
+ggplot(data = data, mapping = aes(x = Year,y = Overall.Homeless)) + 
 geom_line()
 
 #Homeless 18-24
-ggplot(data = data, aes(x = Year, y = Overall.Homeless...Age.18.to.24)) + 
+ggplot(data = data, aes(x = Year, y = Overall.Homeless...Age.18.to.24)) +
   geom_line()
 
 #Homeless Under 18
 ggplot(data = data, aes(x = Year, y = Overall.Homeless...Under.18)) + 
-  geom_line()
+  geom_line() + 
+  labs(y = "Total Homeless Under 18")
 
+```
+
+
+
+
+### Total Sheltered vs Unsheltered
+```{r sheltered unsheltered}
 #Total Sheltered Homeless
 ggplot(data = data, aes(x = Year, y = Sheltered.Total.Homeless)) + 
-  geom_line()
+  geom_line() + 
+  labs(y = "Total Sheltered Homeless")
 
 #Total Unsheltered Homeless
 ggplot(data = data, aes(x = Year, y = Unsheltered.Homeless)) + 
-  geom_line()
+  geom_line() + 
+  labs(y = "Total Unsheltered Homeless")
 
+#Total Unsheltered vs Total Sheltered.
+data %>% 
+ggplot(aes(x = Year)) + 
+  geom_line(aes(y = Sheltered.Total.Homeless, color = "Sheltered")) + 
+  geom_line(aes(y = Unsheltered.Homeless, color = "Unsheltered")) +
+  labs(y = "Number of Homeless")
+
+
+#ES - Emergency Shelter
+#TH - Transitional Housing
+#SH - Safe Haven
+```
+
+What happened in 2015? A HUGE decrease in the total number of unsheltered homeless. Nearly the same number as sheltered. 
+
+
+
+
+### Male vs. Female Homeless numbers
+
+```{r male v. fem}
 #Male vs. Female
 ggplot(data = data, aes(x = Year)) + 
-  geom_line(aes(y = Overall.Homeless...Female), color = "pink") + 
-  geom_line(aes(y = Overall.Homeless...Male), color = "blue") + 
-  labs(y = "Overall Homeless")
+  geom_line(aes(y = Overall.Homeless...Female, color = "Female")) + 
+  geom_line(aes(y = Overall.Homeless...Male, color = "Male")) + 
+  labs(y = "Number of Homeless")
 
-#Overall Homeless by Race
+```
+
+2015 again?? Male homelessness decreased rapidly and female homelessness had a slight increase! 
+
+Trend of males having higher rates of homelessness that females.
+
+### Overall Homeless by Race
+
+```{r race plot}
 ggplot(data = data, aes(x = Year)) + 
-  geom_line(aes(y = Overall.Homeless...White), color = "grey") + 
-  geom_line(aes(y = Overall.Homeless...Black..African.American..or.African)) +
-  geom_line(aes(y = Overall.Homeless...Asian.or.Asian.American), color = "blue") + 
-  geom_line(aes(y = Overall.Homeless...American.Indian..Alaska.Native..or.Indigenous), color = "red") +
+  geom_line(aes(y = Overall.Homeless...White, color = "White")) + 
+  geom_line(aes(y = Overall.Homeless...Black..African.American..or.African, color = "Black, African American, African")) +
+  geom_line(aes(y = Overall.Homeless...Asian.or.Asian.American, color = "Asian, Asian American")) + 
+  geom_line(aes(y = Overall.Homeless...American.Indian..Alaska.Native..or.Indigenous, color = "American Indian, Alaskan, Indigenous")) +
   labs(y = "Overall Homeless")
 ```
+
+Whites are the majority of the homeless followed by Blacks (2015 AGAIN?). Asian and Inigenous homelessness is very low. 
+
+
 
