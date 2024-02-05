@@ -133,12 +133,21 @@ ggplot(aes(x = Year)) +
 
 
 #ES - Emergency Shelter
+
+data %>% 
+  ggplot(aes(x = Year)) + 
+  geom_line(aes(y = Sheltered.ES.Homeless, color = "Emergency")) + 
+  geom_line(aes(y = Sheltered.TH.Homeless, color = "Transitional")) +
+  geom_line(aes(y = Sheltered.SH.Homeless, color = "Safe Haven"))
 #TH - Transitional Housing
 #SH - Safe Haven
 ```
 
-What happened in 2015? A HUGE decrease in the total number of unsheltered homeless. Nearly the same number as sheltered. 
+What happened in 2015? A HUGE decrease in the total number of unsheltered homeless. Nearly the same number as sheltered.
 
+They seemed to have all went into Emergency Sheltering end of 2015. 
+
+Zero people in Safe Haven Housing over the last 10 years.
 
 
 
