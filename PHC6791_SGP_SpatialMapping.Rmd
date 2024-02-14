@@ -1,0 +1,135 @@
+---
+title: "PHC6791_SGP_Spatial Mapping"
+author: "Rylen Garlitz"
+date: '`r Sys.Date()`'
+output: html_document
+---
+
+libraries
+```{r}
+library(tidyverse)
+library(sf)
+#library(rnaturalearth)
+#library(rnaturalearthdata)
+library(maps)
+library(leaflet) #Interactive Map Plotting
+library(osrm) #Routing
+
+```
+
+
+Read in some shit
+```{r}
+markets <-read.csv("data/SNAP Retailer Location data.csv")
+```
+
+
+## Creating Interactive Spatial Map
+```{r}
+(map <- leaflet(data = markets) %>% 
+  addTiles() %>% 
+  addMarkers(lng = markets$Longitude, lat = markets$Latitude, popup = markets$Store.Name))
+
+?leaflet
+
+#Select Points
+CircleK2721002 <- markets %>% 
+  filter(Store.Name == "Circle K 2721002") %>% 
+  select(Longitude, Latitude)
+
+CVS4629 <- markets %>% 
+  filter(Store.Name == "CVS Pharmacy 4629") %>% 
+  select(Longitude, Latitude)
+
+#Create Dataframe of Coordinates
+CVs_CircleK <- data.frame(rbind(CircleK2721002, CVS4629))
+
+#Create Route information
+CVS_CircleK.route <- osrmRoute(loc = CVs_CircleK)
+CVS_CircleK.route
+#20.02 km from points.
+
+#Plot Route Data
+(map <- leaflet(data = markets) %>% 
+  addTiles() %>% 
+  addMarkers(lng = markets$Longitude, lat = markets$Latitude, popup = markets$Store.Name) %>% 
+  addPolylines(data = CVS_CircleK.route, color = "blue"))
+
+```
+
+
+
+## Crime Response Data
+
+```{r}
+crime <- read.csv("data/Crime_Responses_20240212.csv")
+
+crime$Incident.Type <- as.factor(crime$Incident.Type)
+
+levels(crime$Incident.Type)
+
+
+#Remove NAs
+crime <- crime %>% 
+  na.omit()
+
+crime %>% 
+  group_by(Incident.Type) %>% 
+  count() %>% 
+  arrange(desc(n)) %>% 
+  print(n = 200)
+
+
+# Remove Crime data not in Alachua County.
+crime.filter1 <- crime %>%  
+  filter(!Longitude < -82.7 | !Longitude > -82 | !Latitude < 29.4 | !Latitude > 29.95 )
+
+```
+
+
+
+## Bus Data
+
+```{r}
+bus.stops <- read_sf("data/RTSBusStops_Spring2024", layer = "RTSBusStops_Fall2023")
+bus.stops
+
+bus.stops <- bus.stops %>% 
+  filter(!OBJECTID == "0")
+
+(bus.stop.map <- leaflet(data = bus.stops) %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = bus.stops$LONGITUDE, lat = bus.stops$LATITUDE, popup = bus.stops$STOP_NAME, radius = 0.5, fillOpacity = 1, color = "black"))
+
+bus.routes <- st_read("data/RTSBusRoutes_Spring2024", layer = "Spring2024_Weekday")
+
+head(bus.routes)
+
+plot(st_geometry(bus.routes))
+
+bus.route.map <- leaflet(bus.routes) %>% 
+  addTiles() %>% 
+  addPolylines(data = bus.routes)
+
+bus.routes.drop <- st_zm(bus.routes, drop = T, what = "ZM")
+
+route.geo <- bus.routes[,'geometry'] %>% 
+  st_zm(drop = T, what = "ZM")
+
+leaflet(route.geo) %>% 
+  addTiles() %>% 
+  addPolylines(color = "red")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+

@@ -58,13 +58,13 @@ data_2015 <- data_2015 %>%
   filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
 data_2014 <- data_2014 %>% 
   filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
-data_2013 <- data_2013 %>% 
+#data_2013 <- data_2013 %>% 
   filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
-data_2012 <- data_2012 %>% 
+#data_2012 <- data_2012 %>% 
   filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
-data_2011 <- data_2011 %>% 
+#data_2011 <- data_2011 %>% 
   filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
-data_2010 <- data_2010 %>% 
+#data_2010 <- data_2010 %>% 
   filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
 ```
 
@@ -81,10 +81,10 @@ data_2017$Year <- 2017
 data_2016$Year <- 2016
 data_2015$Year <- 2015
 data_2014$Year <- 2014
-data_2013$Year <- 2013
-data_2012$Year <- 2012
-data_2011$Year <- 2011
-data_2010$Year <- 2010
+#data_2013$Year <- 2013
+#data_2012$Year <- 2012
+#data_2011$Year <- 2011
+#data_2010$Year <- 2010
 ```
 
 ### Merge Data sets
@@ -100,10 +100,10 @@ data <- merge(data, data_2017, all = TRUE)
 data <- merge(data, data_2016, all = TRUE)
 data <- merge(data, data_2015, all = TRUE)
 data <- merge(data, data_2014, all = TRUE)
-data <- merge(data, data_2013, all = TRUE)
-data <- merge(data, data_2012, all = TRUE)
-data <- merge(data, data_2011, all = TRUE)
-data <- merge(data, data_2010, all = TRUE)
+#data <- merge(data, data_2013, all = TRUE)
+#data <- merge(data, data_2012, all = TRUE)
+#data <- merge(data, data_2011, all = TRUE)
+#data <- merge(data, data_2010, all = TRUE)
 ```
 
 ### Graph some stuff
@@ -198,10 +198,6 @@ ggplot(data = data, aes(x = Year)) +
 
 
 ggplot(data = data, aes(x = Year)) + 
-  geom_line(aes(y = Overall.Homeless...White, color = "White")) + 
-  geom_line(aes(y = Overall.Homeless...Black..African.American..or.African, color = "Black, African American, African")) +
-  geom_line(aes(y = Overall.Homeless...Asian.or.Asian.American, color = "Asian, Asian American")) + 
-  geom_line(aes(y = Overall.Homeless...American.Indian..Alaska.Native..or.Indigenous, color = "American Indian, Alaskan, Indigenous")) +
   geom_line(aes(y = Overall.Homeless...Female, color = "Female")) + 
   geom_line(aes(y = Overall.Homeless...Male, color = "Male")) + 
   geom_line(aes(y = Sheltered.ES.Homeless, color = "Emergency")) + 
