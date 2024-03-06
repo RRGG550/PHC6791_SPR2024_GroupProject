@@ -8,11 +8,14 @@ output: html_document
 libraries
 ```{r}
 library(tidyverse)
+library(tidygeocoder)
 library(sf)
 #library(rnaturalearth)
 #library(rnaturalearthdata)
 library(maps)
 library(leaflet) #Interactive Map Plotting
+#install.packages("leaflegend")
+library(leaflegend)
 library(osrm) #Routing
 
 ```
@@ -64,35 +67,59 @@ markets$Icons <- unlist(markets$Icons)
 ```
 
 
-
-## Crime Response Data
+## Shelters
 
 ```{r}
-crime <- read.csv("data/Crime_Responses_20240212.csv")
-
-crime$Incident.Type <- as.factor(crime$Incident.Type)
-
-levels(crime$Incident.Type)
+shelters <- read.csv("data/FL508_CoC_Addresses.csv")
 
 
-#Remove NAs
-crime <- crime %>% 
-  na.omit()
+shelters.GV <- shelters %>% 
+ filter(CoC == "Gainesville/Alachua, Putnam Counties CoC") #Filter Gainesville/Alachua, Putnam Counties
 
-crime %>% 
-  group_by(Incident.Type) %>% 
-  count() %>% 
-  arrange(desc(n)) %>% 
-  print(n = 200)
+unique(shelters.GV$Organization.Name)  # How many Shelters?
+
+shelters.GV <- shelters.GV %>% 
+  distinct(Organization.Name, .keep_all = T) #Remove duplicate names.
+
+#Add Data
+shelters.GV <- shelters.GV[-c(1),]
+
+shelters.GV[2,16] <- "926 St. Johns Ave"
+shelters.GV[2,17] <- "Palatka"
+
+shelters.GV[3,16] <- "2100 NW 53rd Ave"
+shelters.GV[3,17] <- "Gainesville"
+
+shelters.GV[4,16] <- "1810 NW 6th St"
+
+shelters.GV[11,16] <- "1405 NW 13th St"
+
+shelters.GV[14,16] <- "2130 NW 31st Ave"
+
+shelters.GV <- shelters.GV %>% 
+  mutate(address = paste(address1, city, state, zip, sep = ","))
+```
 
 
-# Remove Crime data not in Alachua County.
-crime.filter1 <- crime %>%  
-  filter(!Longitude < -82.7 | !Longitude > -82 | !Latitude < 29.4 | !Latitude > 29.95 )
+## Geocode Shelters
+```{r}
+geo.shelters <- shelters.GV %>% 
+  geocode(address = address, method = "osm")
+
+
+geo.shelters.sf <- st_as_sf(geo.shelters, coords = c("long", 'lat'), na.fail = F)
+
+write_csv(geo.shelters.sf, "data/geo.shelters.csv")
 
 ```
 
 
+## Plot Shelters
+```{r}
+leaflet(geo.shelters.sf) %>% 
+  addProviderTiles("CartoDB.Positron") %>% 
+  addAwesomeMarkers(data = geo.shelters.sf, popup = geo.shelters.sf$Organization.Name)
+```
 
 ## Bus Data
 
@@ -122,7 +149,8 @@ leaflet(bus.routes) %>%
   addCircleMarkers(lng = markets$Longitude, lat = markets$Latitude, popup = markets$Store.Name, weight = 2, radius = 4, fillOpacity = 1, color = "red")
 ```
 
-### Change the Icons (NOT WORKING)
+### Change the Icons
+
 ```{r}
 
 library(fontawesome)
@@ -181,18 +209,64 @@ store.icons <- awesomeIconList(
   )
 )
 
-bus.stop.icon <- makeIcon(
-  iconUrl = "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+shelter.icon <- makeAwesomeIcon(
+  icon = "home", 
+  iconColor = "black", 
+  markerColor = "red", 
+  library = "fa"
 )
 
+bus.route.colors <- colorFactor(c("#0D479C",
+"#10D3DE",
+"#04109A",
+"#83D5FD",
+"#7F1F4A",
+"#6FE329",
+"#50CBE7",
+"#5A19A6",
+"#641D60",
+"#3529D6",
+"#EF6DD0",
+"#7A54BE",
+"#B01ECC",
+"#F2A5FA",
+"#4BCE4A",
+"#84F22B",
+"#8B618C",
+"#48C880",
+"#5C4DAE",
+"#AE0C0D",
+"#FC0AF2",
+"#4973A4",
+"#B5EFC3",
+"#749B5D",
+"#03A747"), bus.routes$route_id)
 
+```
+
+
+Plot the Full Map
+```{r} 
 leaflet(markets.sf) %>% 
   addProviderTiles("CartoDB.Positron") %>% 
   addAwesomeMarkers(icon = ~store.icons[Icons],
-                   label = ~as.character(Store.Name, Store.Type)) %>% 
+                   label = ~as.character(Store.Name, Store.Type), 
+                   group = "Stores") %>% #EBT/SNAP Markets
+  addLegendAwesomeIcon(iconSet = store.icons, 
+                       title = "Store Types",
+                       position = "topright", 
+                       group = "Stores") %>% 
+  addAwesomeMarkers(data = geo.shelters.sf, 
+                    popup = paste0(
+                      "<b>Organization: </b>", 
+                      geo.shelters.sf$Organization.Name, 
+                      "<br>", 
+                      "<b>Address: </b>", 
+                      geo.shelters.sf$address1
+                    ), 
+                    icon = shelter.icon, group = "Shelters") %>% #Shelters
   addPolylines(data = bus.routes, 
-               opacity = 1, 
-               color = "purple", 
+               opacity = 1,
                popup = paste0(
                      "<b>Route: </b>", 
                      bus.routes$shape_id, 
@@ -201,7 +275,9 @@ leaflet(markets.sf) %>%
                      bus.routes$route_long
                    ), 
                label = bus.routes$route_id,
-               weight = 3) %>% 
+               weight = 3,
+               group = "Bus Routes", color = ~bus.route.colors(route_id)) %>%  #Bus Routes
+  #addLegendFactor(pal = bus.route.colors, values = bus.routes$route_id, group = "Bus Routes", position = "bottomleft" , orientation = "horizontal") %>% #Legend for Bus Routes
   addCircleMarkers(lng = bus.stops$LONGITUDE, 
                    lat = bus.stops$LATITUDE, 
                    popup = paste0(
@@ -211,14 +287,16 @@ leaflet(markets.sf) %>%
                      "<b>Line: </b>", 
                      bus.stops$DESCRIPTIO
                    ),
-                   weight = 2, 
                    radius = 4, 
                    opacity = 1,
-                   fillOpacity = 1)
-             
-leaflet(bus.stops) %>% 
-  addProviderTiles("CartoDB.Positron") %>%
-  addMarkers(~LONGITUDE, ~LATITUDE, popup = bus.stops$STOP_NAME, icon = ~bus.stop.icon)      
+                   stroke = F,
+                   fillOpacity = 1,
+                   color = "darkgrey",
+                   group = "Bus Stops") %>% #Bus Stops
+  addLayersControl(overlayGroups = c("Shelters","Stores","Bus Routes","Bus Stops"), position = "topleft", options = layersControlOptions(collapsed = F)) #Filter
+       
+
+
                    
 ```
 
