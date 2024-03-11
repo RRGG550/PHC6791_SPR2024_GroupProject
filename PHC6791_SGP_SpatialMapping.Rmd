@@ -1,69 +1,33 @@
 ---
 title: "PHC6791_SGP_Spatial Mapping"
 author: "Rylen Garlitz"
-date: '`r Sys.Date()`'
+date: '03-10-24'
 output: html_document
 ---
 
-libraries
-```{r}
-library(tidyverse)
-library(tidygeocoder)
-library(sf)
-#library(rnaturalearth)
-#library(rnaturalearthdata)
-library(maps)
+## Libraries
+```{r message=FALSE, warning=FALSE}
+library(tidyverse) #The Data God
+library(tidygeocoder) #Geocoding Addresses
+library(sf) #Data that can be plotted in maps
+library(maps) #Maps
 library(leaflet) #Interactive Map Plotting
-#install.packages("leaflegend")
-library(leaflegend)
-library(osrm) #Routing
+library(leaflegend) #Legend add-on for leaflet
+library(osrm) #Routing between points
 
 ```
 
 
-Read in some shit
+## Read in markets
 ```{r}
 markets <-read.csv("data/SNAP Retailer Location data.csv")
 str(markets)
 
 markets$Store.Type <- as.factor(markets$Store.Type)
 
-levels(markets$Store.Type)
+levels(markets$Store.Type) #Check market types
 
-markets.sf <- st_as_sf(markets, coords = c("Longitude", "Latitude"), crs = st_crs(4326))
-```
-
-
-## Creating Interactive Spatial Map
-```{r}
-(map <- leaflet(data = markets) %>% 
-  addTiles() %>% 
-  addMarkers(lng = markets$Longitude, lat = markets$Latitude, popup = markets$Store.Name))
-
-#Select Points
-CircleK2721002 <- markets %>% 
-  filter(Store.Name == "Circle K 2721002") %>% 
-  select(Longitude, Latitude)
-
-CVS4629 <- markets %>% 
-  filter(Store.Name == "CVS Pharmacy 4629") %>% 
-  select(Longitude, Latitude)
-
-#Create Dataframe of Coordinates
-CVs_CircleK <- data.frame(rbind(CircleK2721002, CVS4629))
-
-#Create Route information
-CVS_CircleK.route <- osrmRoute(loc = CVs_CircleK)
-CVS_CircleK.route
-#20.02 km from points.
-
-#Plot Route Data
-(map <- leaflet(data = markets) %>% 
-  addTiles() %>% 
-  addMarkers(lng = markets$Longitude, lat = markets$Latitude, popup = markets$Store.Name, icon = store.icons[markets$Icons]))
-
-
-markets$Icons <- unlist(markets$Icons)
+markets.sf <- st_as_sf(markets, coords = c("Longitude", "Latitude"), crs = st_crs(4326)) #Create SF Object
 ```
 
 
@@ -81,7 +45,7 @@ unique(shelters.GV$Organization.Name)  # How many Shelters?
 shelters.GV <- shelters.GV %>% 
   distinct(Organization.Name, .keep_all = T) #Remove duplicate names.
 
-#Add Data
+#Fix Missing Data
 shelters.GV <- shelters.GV[-c(1),]
 
 shelters.GV[2,16] <- "926 St. Johns Ave"
@@ -96,46 +60,46 @@ shelters.GV[11,16] <- "1405 NW 13th St"
 
 shelters.GV[14,16] <- "2130 NW 31st Ave"
 
+#Create Address column
 shelters.GV <- shelters.GV %>% 
   mutate(address = paste(address1, city, state, zip, sep = ","))
 ```
 
 
-## Geocode Shelters
+### Geocode Shelters
 ```{r}
 geo.shelters <- shelters.GV %>% 
   geocode(address = address, method = "osm")
 
 
 geo.shelters.sf <- st_as_sf(geo.shelters, coords = c("long", 'lat'), na.fail = F)
-
-#write_sf(geo.shelters.sf, "data/geo.shelters.csv")
 ```
 
 
-## Plot Shelters
+### Plot Shelters
 ```{r}
 leaflet(geo.shelters.sf) %>% 
   addProviderTiles("CartoDB.Positron") %>% 
-  addAwesomeMarkers(data = geo.shelters.sf, popup = geo.shelters.sf$Organization.Name)
+  addAwesomeMarkers(data = geo.shelters.sf, popup = ~Organization.Name)
 ```
 
 ## Bus Data
-
 ```{r}
 bus.stops <- read_sf("data/RTSBusStops_Spring2024", layer = "RTSBusStops_Fall2023")
 bus.stops
 
 bus.stops <- bus.stops %>% 
-  filter(!OBJECTID == "0")
+  filter(!OBJECTID == "0") #Remove retired bus stops
 
 bus.stops <- bus.stops %>% 
-  st_transform('+proj=longlat +datum=WGS84')
+  st_transform('+proj=longlat +datum=WGS84') #Create SF obj with correct CRS for plotting
 
-(bus.stop.map <- leaflet(data = bus.stops) %>% 
+#Test Bus Plots
+leaflet(data = bus.stops) %>% 
   addTiles() %>% 
-  addCircleMarkers(lng = bus.stops$LONGITUDE, lat = bus.stops$LATITUDE, popup = bus.stops$STOP_NAME, radius = 0.5, fillOpacity = 1, color = "black"))
+  addCircleMarkers(data = bus.stops, popup = ~STOP_NAME, radius = 0.5, fillOpacity = 1, color = "black")
 
+#Read in Bus Route data and change CRS
 bus.routes <- st_read("data/RTSBusRoutes_Spring2024") %>% 
   st_transform('+proj=longlat +datum=WGS84')
 
@@ -144,19 +108,19 @@ head(bus.routes)
 #Test Plotting LINESTRING
 plot(st_geometry(bus.routes))
 
+#Plotting Route, Stop, and Market Data
 leaflet(bus.routes) %>% 
   addProviderTiles("CartoDB.Positron") %>% 
   addPolylines(data = bus.routes, opacity = 1, color = "purple", label = bus.routes$route_id, weight = 2) %>% 
-  addCircleMarkers(lng = bus.stops$LONGITUDE, lat = bus.stops$LATITUDE, popup = bus.stops$STOP_NAME, weight = 1, radius = 2, fillOpacity = 1) %>% 
-  addCircleMarkers(lng = markets$Longitude, lat = markets$Latitude, popup = markets$Store.Name, weight = 2, radius = 4, fillOpacity = 1, color = "red")
+  addCircleMarkers(data = bus.stops, popup = ~STOP_NAME, weight = 1, radius = 2, fillOpacity = 1) %>% 
+  addCircleMarkers(data = markets.sf, popup = ~Store.Name, weight = 2, radius = 4, fillOpacity = 1, color = "red")
 ```
 
 ### Change the Icons
 
 ```{r}
 
-library(fontawesome)
-
+#Create column of store names without spaces for Icons
 markets.sf <- markets.sf %>% 
   mutate(Icons = case_when(
     Store.Type == "Supermarket" ~ "Supermarket", 
@@ -168,10 +132,11 @@ markets.sf <- markets.sf %>%
     Store.Type == "Other" ~ "Other"
   ))
 
+#Check number of Icons
 markets.sf$Icons <- as.factor(markets.sf$Icons)
 levels(markets.sf$Icons)
 
-
+#List of Icons for each store type
 store.icons <- awesomeIconList(
   Supermarket = makeAwesomeIcon(
     icon = "shopping-cart", 
@@ -218,6 +183,7 @@ shelter.icon <- makeAwesomeIcon(
   library = "fa"
 )
 
+#Add bus route colors
 bus.route.colors <- colorFactor(c("#0D479C",
 "#10D3DE",
 "#04109A",
@@ -247,8 +213,8 @@ bus.route.colors <- colorFactor(c("#0D479C",
 ```
 
 
-Plot the Full Map
-```{r} 
+## Plot the Full Map
+```{r fig.align='center'} 
 leaflet(markets.sf) %>% 
   addProviderTiles("CartoDB.Positron") %>% 
   addAwesomeMarkers(icon = ~store.icons[Icons],
@@ -297,26 +263,23 @@ leaflet(markets.sf) %>%
                    group = "Bus Stops") %>% #Bus Stops
   addLayersControl(overlayGroups = c("Shelters","Stores","Bus Routes","Bus Stops"), position = "topleft", options = layersControlOptions(collapsed = F)) #Filter
        
-
-
-                   
 ```
 
-#Plotting Specific Routes
+# Plotting Specific Routes
 
-### Line 25/26 Inbound.
-```{r}
+```{r error=TRUE, warning=FALSE}
+##Plotting specific routes between locations.
+GRACE <- geo.shelters.sf[c(5),] #Grab shelter sf information for GRACE
 
-GRACE <- geo.shelters.sf[c(5),]
-
-walmart3877 <- markets.sf[c(82),]
-
-#Create Dataframe of Coordinates
-Grace_walmart3877 <- data.frame(rbind(GRACE, walmart3877))
+walmart3877 <- markets.sf[c(82),] #Grab market sf information for particular store
 
 #Create Route information
 GRACE_walmart3877.route <- osrmRoute(dst = walmart3877, src = GRACE)
+```
 
+## Line 25/26 Inbound/Outbound
+```{r fig.align='center'}
+#Plot Route 25/26 I/O
 leaflet(data = markets.sf) %>% 
   addProviderTiles("CartoDB.Positron") %>% 
   #setView(lng = -82.30367, lat = 29.66646,zoom = 13) %>%
@@ -333,7 +296,7 @@ leaflet(data = markets.sf) %>%
                       GRACE$address1
                     ), 
                     icon = shelter.icon, group = "Shelters") %>%
-  #addPolylines(data = GRACE_walmart3877.route, color = "red") %>% 
+  #addPolylines(data = GRACE_walmart3877.route, color = "red") %>% #If you wanted to plot routes between points
   addPolylines(data = bus.routes[c(75, 76),], 
                opacity = 1,
                popup = paste0(
@@ -374,15 +337,15 @@ leaflet(data = markets.sf) %>%
                    group = "Bus Stops")
 ```
 
-## Line 8/6
-```{r}
+## Line 8/6 Inbound/Outbound
+```{r fig.align='center'}
 leaflet(data = markets.sf) %>% 
   addProviderTiles("CartoDB.Positron") %>% 
   #setView(lng = -82.30367, lat = 29.66646,zoom = 13) %>%
   addAwesomeMarkers(data = markets.sf[c(10, 36,42,113,134,156,158,169,188,190, 194,195,196,198, 203,209, 212),], icon = ~store.icons[Icons],
                    popup = ~as.character(Store.Street.Address), 
                    label = ~as.character(Store.Name),
-                   group = "Stores") %>%
+                   group = "Stores") %>% #Plot markets along the route
   addAwesomeMarkers(data = geo.shelters.sf[c(3,9,4,11, 12,1,14),], 
                     popup = paste0(
                       "<b>Organization: </b>", 
@@ -391,7 +354,7 @@ leaflet(data = markets.sf) %>%
                       "<b>Address: </b>", 
                       GRACE$address1
                     ), 
-                    icon = shelter.icon, group = "Shelters") %>%
+                    icon = shelter.icon, group = "Shelters") %>% #Plot Shelters along the route
   addPolylines(data = bus.routes[c(17,31),], 
                opacity = 1,
                popup = paste0(
@@ -403,7 +366,7 @@ leaflet(data = markets.sf) %>%
                    ), 
                label = ~as.character(route_id),
                weight = 3,
-               group = "Bus Routes", color = "#03A747") %>% 
+               group = "Bus Routes", color = "#03A747") %>% #Plot line 8
   addPolylines(data = bus.routes[c(19,49),], 
                opacity = 1,
                popup = paste0(
@@ -415,7 +378,7 @@ leaflet(data = markets.sf) %>%
                    ), 
                label = bus.routes[c(19,49),]$route_id,
                weight = 3,
-               group = "Bus Routes", color = "#3529D6") %>% 
+               group = "Bus Routes", color = "#3529D6") %>% #Plot line 6
     addCircleMarkers(data = bus.stops[c(12),],
                    popup = paste0(
                      "<b>Stop: </b>", 
@@ -429,7 +392,7 @@ leaflet(data = markets.sf) %>%
                    stroke = F,
                    fillOpacity = 1,
                    color = "darkred",
-                   group = "Bus Stops")
+                   group = "Bus Stops") #Plot UF Bus stops
 ```
 
 
