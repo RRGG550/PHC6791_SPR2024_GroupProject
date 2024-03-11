@@ -1,0 +1,214 @@
+---
+title: "Small Group Projects"
+author: "Rylen Garlitz"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Install Libraries
+```{r}
+library(tidyverse)
+#install.packages("readxlsb")
+library(readxlsb)
+```
+
+
+## Read in Data
+
+Data in XLSB is separated by year in each sheet. Using 'readxlsb' I read in each year as a separate file.
+
+```{r}
+#?read_xlsb
+data_2023 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 1)
+data_2022 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 2)
+data_2021 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 3)
+data_2020 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 4)
+data_2019 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 5)
+data_2018 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 6)
+data_2017 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 7)
+data_2016 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 8)
+data_2015 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 9)
+data_2014 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 10)
+data_2013 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 11)
+data_2012 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 12)
+data_2011 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 13)
+data_2010 <- read_xlsb("data/2007-2023-PIT-Counts-by-CoC.xlsb", sheet = 14)
+```
+
+### Read only Gainesville/Alachua, Putnam County Data
+
+```{r}
+data_2023 <- data_2023 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+data_2022 <- data_2022 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+data_2021 <- data_2021 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+data_2020 <- data_2020 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+data_2019 <- data_2019 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+data_2018 <- data_2018 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+data_2017 <- data_2017 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+data_2016 <- data_2016 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+data_2015 <- data_2015 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+data_2014 <- data_2014 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+#data_2013 <- data_2013 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+#data_2012 <- data_2012 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+#data_2011 <- data_2011 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+#data_2010 <- data_2010 %>% 
+  filter(CoC.Name == "Gainesville/Alachua, Putnam Counties CoC")
+```
+
+### Add year column
+
+```{r}
+data_2023$Year <- 2023
+data_2022$Year <- 2022
+data_2021$Year <- 2021
+data_2020$Year <- 2020
+data_2019$Year <- 2019
+data_2018$Year <- 2018
+data_2017$Year <- 2017
+data_2016$Year <- 2016
+data_2015$Year <- 2015
+data_2014$Year <- 2014
+#data_2013$Year <- 2013
+#data_2012$Year <- 2012
+#data_2011$Year <- 2011
+#data_2010$Year <- 2010
+```
+
+### Merge Data sets
+
+```{r}
+#?merge
+data <- merge(data_2023, data_2022, all = TRUE)
+data <- merge(data, data_2021, all = TRUE)
+data <- merge(data, data_2020, all = TRUE)
+data <- merge(data, data_2019, all = TRUE)
+data <- merge(data, data_2018, all = TRUE)
+data <- merge(data, data_2017, all = TRUE)
+data <- merge(data, data_2016, all = TRUE)
+data <- merge(data, data_2015, all = TRUE)
+data <- merge(data, data_2014, all = TRUE)
+#data <- merge(data, data_2013, all = TRUE)
+#data <- merge(data, data_2012, all = TRUE)
+#data <- merge(data, data_2011, all = TRUE)
+#data <- merge(data, data_2010, all = TRUE)
+```
+
+### Graph some stuff
+
+```{r}
+#Overall Homeless Count
+data %>% 
+  ggplot(aes(x = Year)) + 
+  geom_line(aes(y = Overall.Homeless, color = "Overall"))
+
+#Homeless 18-24
+ggplot(data = data, aes(x = Year, y = Overall.Homeless...Age.18.to.24)) +
+  geom_line()
+
+#Homeless Under 18
+ggplot(data = data, aes(x = Year, y = Overall.Homeless...Under.18)) + 
+  geom_line() + 
+  labs(y = "Total Homeless Under 18")
+
+```
+
+
+
+
+### Total Sheltered vs Unsheltered
+```{r sheltered unsheltered}
+#Total Sheltered Homeless
+ggplot(data = data, aes(x = Year, y = Sheltered.Total.Homeless, color = "Sheltered")) + 
+  geom_line() + 
+  labs(y = "Total Sheltered Homeless")
+
+#Total Unsheltered Homeless
+ggplot(data = data, aes(x = Year, y = Unsheltered.Homeless)) + 
+  geom_line() + 
+  labs(y = "Total Unsheltered Homeless")
+
+#Total Unsheltered vs Total Sheltered.
+data %>% 
+ggplot(aes(x = Year)) + 
+  geom_line(aes(y = Sheltered.Total.Homeless, color = "Sheltered")) + 
+  geom_line(aes(y = Unsheltered.Homeless, color = "Unsheltered")) +
+  labs(y = "Number of Homeless")
+
+
+#ES - Emergency Shelter
+
+
+#Sheltered Homeless
+data %>% 
+  ggplot(aes(x = Year)) + 
+  geom_line(aes(y = Sheltered.ES.Homeless, color = "Emergency")) + 
+  geom_line(aes(y = Sheltered.TH.Homeless, color = "Transitional")) +
+  labs(y = "Number of Homeless", title = "Sheltered Homeless")
+#TH - Transitional Housing
+#SH - Safe Haven
+```
+
+What happened in 2015-2016? A HUGE decrease in the total number of unsheltered homeless. Nearly the same number as sheltered.
+
+They seemed to have all went into Emergency Sheltering end of 2015. 
+
+Zero people in Safe Haven Housing over the last 10 years.
+
+
+Hurricane? Election? Financial Crisis? 
+
+### Male vs. Female Homeless numbers
+
+```{r male v. fem}
+#Male vs. Female
+ggplot(data = data, aes(x = Year)) + 
+  geom_line(aes(y = Overall.Homeless...Female, color = "Female")) + 
+  geom_line(aes(y = Overall.Homeless...Male, color = "Male")) + 
+  labs(y = "Number of Homeless")
+
+```
+
+2015 again?? Male homelessness decreased rapidly and female homelessness had a slight increase! 
+
+Trend of males having higher rates of homelessness that females.
+
+### Overall Homeless by Race
+
+```{r race plot}
+ggplot(data = data, aes(x = Year)) + 
+  geom_line(aes(y = Overall.Homeless...White, color = "White")) + 
+  geom_line(aes(y = Overall.Homeless...Black..African.American..or.African, color = "Black, African American, African")) +
+  geom_line(aes(y = Overall.Homeless...Asian.or.Asian.American, color = "Asian, Asian American")) + 
+  geom_line(aes(y = Overall.Homeless...American.Indian..Alaska.Native..or.Indigenous, color = "American Indian, Alaskan, Indigenous")) +
+  labs(y = "Overall Homeless")
+
+
+
+ggplot(data = data, aes(x = Year)) + 
+  geom_line(aes(y = Overall.Homeless...Female, color = "Female")) + 
+  geom_line(aes(y = Overall.Homeless...Male, color = "Male")) + 
+  geom_line(aes(y = Sheltered.ES.Homeless, color = "Emergency")) + 
+  geom_line(aes(y = Sheltered.TH.Homeless, color = "Transitional")) +
+  geom_line(aes(y = Sheltered.Total.Homeless, color = "Sheltered")) + 
+  geom_line(aes(y = Unsheltered.Homeless, color = "Unsheltered")) +
+  geom_line(aes(y = Overall.Homeless, color = "Overall")) + 
+  labs(y = "Totals")
+```
+
+Whites are the majority of the homeless followed by Blacks (2015 AGAIN?). Asian and Indigenous homelessness is very low. 
+
+
+
