@@ -36,7 +36,6 @@ markets.sf <- st_as_sf(markets, coords = c("Longitude", "Latitude"), crs = st_cr
 ```{r}
 shelters <- read.csv("data/FL508_CoC_Addresses.csv")
 
-
 shelters.GV <- shelters %>% 
  filter(CoC == "Gainesville/Alachua, Putnam Counties CoC") #Filter Gainesville/Alachua, Putnam Counties
 
