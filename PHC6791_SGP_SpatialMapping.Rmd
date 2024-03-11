@@ -30,7 +30,7 @@ markets$Store.Type <- as.factor(markets$Store.Type)
 
 levels(markets$Store.Type)
 
-markets.sf <- st_as_sf(markets, coords = c("Longitude", "Latitude"))
+markets.sf <- st_as_sf(markets, coords = c("Longitude", "Latitude"), crs = st_crs(4326))
 ```
 
 
@@ -109,8 +109,7 @@ geo.shelters <- shelters.GV %>%
 
 geo.shelters.sf <- st_as_sf(geo.shelters, coords = c("long", 'lat'), na.fail = F)
 
-write_csv(geo.shelters.sf, "data/geo.shelters.csv")
-
+#write_sf(geo.shelters.sf, "data/geo.shelters.csv")
 ```
 
 
@@ -129,6 +128,9 @@ bus.stops
 
 bus.stops <- bus.stops %>% 
   filter(!OBJECTID == "0")
+
+bus.stops <- bus.stops %>% 
+  st_transform('+proj=longlat +datum=WGS84')
 
 (bus.stop.map <- leaflet(data = bus.stops) %>% 
   addTiles() %>% 
@@ -300,9 +302,135 @@ leaflet(markets.sf) %>%
                    
 ```
 
+#Plotting Specific Routes
 
+### Line 25/26 Inbound.
+```{r}
 
+GRACE <- geo.shelters.sf[c(5),]
 
+walmart3877 <- markets.sf[c(82),]
+
+#Create Dataframe of Coordinates
+Grace_walmart3877 <- data.frame(rbind(GRACE, walmart3877))
+
+#Create Route information
+GRACE_walmart3877.route <- osrmRoute(dst = walmart3877, src = GRACE)
+
+leaflet(data = markets.sf) %>% 
+  addProviderTiles("CartoDB.Positron") %>% 
+  #setView(lng = -82.30367, lat = 29.66646,zoom = 13) %>%
+  addAwesomeMarkers(data = markets.sf[c(22,63, 72, 82,124,139,143, 144,148, 180,196, 203, 227),], icon = ~store.icons[Icons],
+                   popup = ~as.character(Store.Street.Address), 
+                   label = ~as.character(Store.Name),
+                   group = "Stores") %>%
+  addAwesomeMarkers(data = GRACE, 
+                    popup = paste0(
+                      "<b>Organization: </b>", 
+                      GRACE$Organization.Name, 
+                      "<br>", 
+                      "<b>Address: </b>", 
+                      GRACE$address1
+                    ), 
+                    icon = shelter.icon, group = "Shelters") %>%
+  #addPolylines(data = GRACE_walmart3877.route, color = "red") %>% 
+  addPolylines(data = bus.routes[c(75, 76),], 
+               opacity = 1,
+               popup = paste0(
+                     "<b>Route: </b>", 
+                     bus.routes[c(75, 76),]$shape_id, 
+                     "<br>",
+                     "<b>Line: </b>", 
+                     bus.routes[c(75, 76),]$route_long
+                   ), 
+               label = ~as.character(route_id),
+               weight = 3,
+               group = "Bus Routes", color = "#03A747") %>% 
+  addPolylines(data = bus.routes[c(10,11),], 
+               opacity = 1,
+               popup = paste0(
+                     "<b>Route: </b>", 
+                     bus.routes[c(10,11),]$shape_id, 
+                     "<br>",
+                     "<b>Line: </b>", 
+                     bus.routes[c(10,11),]$route_long
+                   ), 
+               label = bus.routes[c(10,11),]$route_id,
+               weight = 3,
+               group = "Bus Routes", color = "#3529D6") %>% 
+    addCircleMarkers(data = bus.stops[c(323, 892),],
+                   popup = paste0(
+                     "<b>Stop: </b>", 
+                     bus.stops[c(323, 892),]$STOP_NAME, 
+                     "<br>",
+                     "<b>Line: </b>", 
+                     bus.stops[c(323, 892),]$DESCRIPTIO
+                   ),
+                   radius = 4, 
+                   opacity = 1,
+                   stroke = F,
+                   fillOpacity = 1,
+                   color = "darkred",
+                   group = "Bus Stops")
+```
+
+## Line 8/6
+```{r}
+leaflet(data = markets.sf) %>% 
+  addProviderTiles("CartoDB.Positron") %>% 
+  #setView(lng = -82.30367, lat = 29.66646,zoom = 13) %>%
+  addAwesomeMarkers(data = markets.sf[c(10, 36,42,113,134,156,158,169,188,190, 194,195,196,198, 203,209, 212),], icon = ~store.icons[Icons],
+                   popup = ~as.character(Store.Street.Address), 
+                   label = ~as.character(Store.Name),
+                   group = "Stores") %>%
+  addAwesomeMarkers(data = geo.shelters.sf[c(3,9,4,11, 12,1,14),], 
+                    popup = paste0(
+                      "<b>Organization: </b>", 
+                      GRACE$Organization.Name, 
+                      "<br>", 
+                      "<b>Address: </b>", 
+                      GRACE$address1
+                    ), 
+                    icon = shelter.icon, group = "Shelters") %>%
+  addPolylines(data = bus.routes[c(17,31),], 
+               opacity = 1,
+               popup = paste0(
+                     "<b>Route: </b>", 
+                     bus.routes[c(17,31),]$shape_id, 
+                     "<br>",
+                     "<b>Line: </b>", 
+                     bus.routes[c(17,31),]$route_long
+                   ), 
+               label = ~as.character(route_id),
+               weight = 3,
+               group = "Bus Routes", color = "#03A747") %>% 
+  addPolylines(data = bus.routes[c(19,49),], 
+               opacity = 1,
+               popup = paste0(
+                     "<b>Route: </b>", 
+                     bus.routes[c(19,49),]$shape_id, 
+                     "<br>",
+                     "<b>Line: </b>", 
+                     bus.routes[c(19,49),]$route_long
+                   ), 
+               label = bus.routes[c(19,49),]$route_id,
+               weight = 3,
+               group = "Bus Routes", color = "#3529D6") %>% 
+    addCircleMarkers(data = bus.stops[c(12),],
+                   popup = paste0(
+                     "<b>Stop: </b>", 
+                     bus.stops[c(12),]$STOP_NAME, 
+                     "<br>",
+                     "<b>Line: </b>", 
+                     bus.stops[c(12),]$DESCRIPTIO
+                   ),
+                   radius = 4, 
+                   opacity = 1,
+                   stroke = F,
+                   fillOpacity = 1,
+                   color = "darkred",
+                   group = "Bus Stops")
+```
 
 
 
