@@ -3,6 +3,8 @@ title: "PHC6791_SGP_Spatial Mapping"
 author: "Rylen Garlitz"
 date: '03-10-24'
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Libraries
@@ -71,7 +73,7 @@ geo.shelters <- shelters.GV %>%
   geocode(address = address, method = "osm")
 
 
-geo.shelters.sf <- st_as_sf(geo.shelters, coords = c("long", 'lat'), na.fail = F)
+s <- st_as_sf(geo.shelters, coords = c("long", 'lat'), na.fail = F, crs=st_crs(4326))
 ```
 
 
